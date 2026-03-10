@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+       webmvc:
+        routes:
+          - id: transaction-service
+            uri: lb://transaction-service
+            predicates:
+              - Path=/api/transactions/**
+
+          - id: user-service
+            uri: lb://user-service
+            predicates:
+              - Path=/api/users/**
+
+          - id: fraud-service
+            uri: lb://fraud-detection-service
+            predicates:
+              - Path=/api/fraud/**
+
+          - id: alert-service
+            uri: lb://alert-service
+            predicates:
+              - Path=/api/alerts/**
+
+          - id: report-service
+            uri: lb://report-service
+            predicates:
+              - Path=/api/reports/**
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
