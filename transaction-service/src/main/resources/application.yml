@@ -41,3 +41,10 @@ management:
       exposure:
         include: "*"
 
+
+kafka:
+  topic:
+    transaction-events: transaction-events
+    fraud-alerts: fraud-alerts
+    notification-events: notification-events
+    audit-log: audit-log
