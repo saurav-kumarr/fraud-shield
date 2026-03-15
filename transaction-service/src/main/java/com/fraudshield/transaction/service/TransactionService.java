@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -66,6 +68,22 @@ public class TransactionService {
         return mapToResponse(savedTransaction);
 
 
+    }
+
+    public List<TransactionResponse> getTransactionsByUserId(String userId) {
+        log.info("Fetching transactions for userId: {}", userId);
+        return transactionRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public TransactionResponse getTransactionById(String transactionId) {
+        log.info("Fetching transaction ID: {}", transactionId);
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Transaction not found: " + transactionId));
+        return mapToResponse(transaction);
     }
 
     private TransactionResponse mapToResponse(Transaction transaction) {
