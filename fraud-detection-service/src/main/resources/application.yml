@@ -27,6 +27,10 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+kafka:
+  topic:
+    fraud-alerts: fraud-alerts
+    transaction-events: transaction-events
 
 eureka:
   client:
