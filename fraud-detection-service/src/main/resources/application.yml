@@ -26,6 +26,8 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.fraudshield.fraud.dto.TransactionEvent
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

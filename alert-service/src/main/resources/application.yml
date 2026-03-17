@@ -29,6 +29,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
 
   mail:
     host: smtp.gmail.com
