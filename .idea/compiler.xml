@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
         <module name="transaction-service" />
+        <module name="config-server" />
         <module name="eureka-server" />
       </profile>
       <profile name="Annotation profile for fraud-shield" enabled="true">
@@ -29,6 +30,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="alert-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
+      <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="fraud-detection-service" options="-parameters" />
       <module name="report-service" options="-parameters" />

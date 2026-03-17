@@ -2,11 +2,13 @@ package com.fraudshield.transaction.kafka;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
 @Configuration
+@RefreshScope
 public class KafkaConfig {
 
     @Value("${kafka.topic.transaction-events}")
