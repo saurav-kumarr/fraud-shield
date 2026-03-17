@@ -24,6 +24,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: "transactionEvent:com.fraudshield.transaction.kafka.TransactionEvent"
 
   data:
     redis:

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -24,14 +25,33 @@ public class FraudDetectionEngine {
         log.info("Starting fraud analysis for transactionId: {}",
                 transaction.getTransactionId());
 
-        List<RuleResult> results = fraudRules.stream()
+//        List<RuleResult> results = fraudRules.stream()
+//                .sorted(Comparator.comparingInt(FraudRule::getPriority))
+//                .map(rule -> rule.evaluate(transaction))
+//                .toList();
+
+        List<RuleResult> results = new ArrayList<>();
+
+        List<FraudRule> sortedRules = fraudRules.stream()
                 .sorted(Comparator.comparingInt(FraudRule::getPriority))
-                .map(rule -> rule.evaluate(transaction))
                 .toList();
+
+        for(FraudRule rule : sortedRules) {
+            RuleResult result = rule.evaluate(transaction);
+            results.add(result);
+
+            // SHORT_CIRCUIT HERE
+            if(result.getRiskScore() >= BLOCK_THRESHOLD) {
+                log.info("Short-circuit triggered by rule: {}. Skipping {} remaining rules.",
+                        rule.getRuleName(),
+                        sortedRules.size() - results.size());
+                break;
+            }
+        }
 
         double totalScore = results.stream()
                 .mapToDouble(RuleResult::getRiskScore)
-                .average()
+                .max()
                 .orElse(0.0);
 
         String triggeredReasons = results.stream()
