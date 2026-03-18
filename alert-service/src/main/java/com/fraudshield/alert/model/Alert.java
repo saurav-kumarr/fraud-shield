@@ -55,6 +55,6 @@ public class Alert {
     private AlertStatus alertStatus;
 
     @CreatedDate
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
 }

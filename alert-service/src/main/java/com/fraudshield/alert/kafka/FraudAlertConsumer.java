@@ -1,6 +1,7 @@
 package com.fraudshield.alert.kafka;
 
 import com.fraudshield.alert.dto.FraudAlertEvent;
+import com.fraudshield.alert.service.AlertService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
