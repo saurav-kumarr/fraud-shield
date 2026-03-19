@@ -11,7 +11,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -25,6 +25,13 @@ spring:
     redis:
       host: localhost
       port: 6379
+  cloud:
+    stream:
+          kafka:
+            binder:
+              consumer-properties:
+                value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+                key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 kafka:
   topic:

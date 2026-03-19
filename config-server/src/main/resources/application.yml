@@ -13,6 +13,11 @@ spring:
           search-locations: file:./config-server/src/main/resources/configs
     bus:
       enabled: true
+    stream:
+      kafka:
+              binder:
+                consumer-properties:
+                  value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
   kafka:
     bootstrap-servers: localhost:9092
 
