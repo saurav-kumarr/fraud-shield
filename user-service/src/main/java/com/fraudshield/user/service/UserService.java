@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserService implements UserDetailsService {
+public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -30,14 +30,6 @@ public class UserService implements UserDetailsService {
     @Value("${security.jwt.expiration}")
     private long jwtExpiration;
 
-    @Override
-    public UserDetails loadUserByUsername(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "user not found: " + email
-                        ));
-    }
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getEmail());

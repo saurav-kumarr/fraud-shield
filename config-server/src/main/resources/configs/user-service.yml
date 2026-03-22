@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/fraudshielddb?TimeZone=Asia/Kolkata
+    url: jdbc:postgresql://localhost:5433/fraudshielddb?TimeZone=Asia/Kolkata
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -13,10 +13,6 @@ spring:
       ddl-auto: update
     show-sql: true
 
-  security:
-    jwt:
-      secret: fraudshield-secret-key-must-be-at-least-256-bits-long
-      expiration: 86400000
 
 eureka:
   client:
