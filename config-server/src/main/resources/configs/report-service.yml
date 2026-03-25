@@ -30,6 +30,10 @@ spring:
         session.timeout.ms: 30000
         heartbeat.interval.ms: 10000
 
+kafka:
+  topic:
+    fraud-alerts: fraud-alerts
+
 eureka:
   client:
     serviceUrl:
