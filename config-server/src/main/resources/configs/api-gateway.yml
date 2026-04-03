@@ -3,19 +3,26 @@ server:
 
 spring:
   cloud:
+#    function:
+#      definition: none
     gateway:
       server:
         webmvc:
           routes:
-            - id: transaction-service
-              uri: lb://transaction-service
+            - id: user-service-auth
+              uri: lb://user-service
               predicates:
-                - Path=/api/transactions/**
+                - Path=/api/auth/**
 
             - id: user-service
               uri: lb://user-service
               predicates:
                 - Path=/api/users/**
+
+            - id: transaction-service
+              uri: lb://transaction-service
+              predicates:
+                - Path=/api/transactions/**
 
             - id: fraud-service
               uri: lb://fraud-detection-service
@@ -31,6 +38,10 @@ spring:
               uri: lb://report-service
               predicates:
                 - Path=/api/reports/**
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
 
 eureka:
   client:
