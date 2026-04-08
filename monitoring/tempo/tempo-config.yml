@@ -1,0 +1,77 @@
+#server:
+#  http_listen_port: 3200
+#
+#distributor:
+#  receivers:
+#    zipkin:
+#      endpoint: 0.0.0.0:9411
+#
+#
+#ingester:
+#  max_block_duration: 5m
+#  max_block_bytes: 100_000_000
+#
+##ingester:
+##  lifecycler:
+##    address: 127.0.0.1
+##    ring:
+##      kvstore:
+##        store: inmemory
+##      replication_factor: 1
+##    final_sleep: 0s
+##  flush_check_period: 5s
+##  max_trace_idle: 10s
+##  flush_all_on_shutdown: true
+#
+#storage:
+#  trace:
+#    backend: local
+#    local:
+#      path: /tmp/tempo/blocks
+#    wal:
+#      path: /tmp/tempo/wal
+#
+#compactor:
+#  compaction:
+#    compaction_interval: 10s
+#    block_retention: 1h
+#
+#metrics_generator:
+#  registry:
+#    external_labels:
+#      source: tempo
+#      cluster: fraud-shield
+#  storage:
+#    path: /tmp/tempo/generator/wal
+#  traces_storage:
+#    path: /tmp/tempo/generator/traces
+#
+#overrides:
+#  defaults:
+#    metrics_generator:
+#      processors:
+#        - service-graphs
+#        - span-metrics
+
+
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    zipkin:
+      endpoint: 0.0.0.0:9411
+
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 100_000_000
+  max_block_duration: 5m
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal

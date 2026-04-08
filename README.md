@@ -62,6 +62,7 @@ Eureka:     http://localhost:8761
 - Backend Engineer | Fintech Domain
 - GitHub: [saurav-kumarr](https://github.com/saurav-kumarr)
 - LinkedIn: [Saurav Kumar](https://www.linkedin.com/in/saurav-kumar-java-developer)
+- Instagram: [Saurav Chaudhary](https://www.instagram.com/sauravchaudharii/)
 
 ---
 

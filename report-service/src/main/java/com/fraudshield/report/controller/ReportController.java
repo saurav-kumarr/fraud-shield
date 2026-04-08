@@ -1,5 +1,6 @@
 package com.fraudshield.report.controller;
 
+import com.fraudshield.report.context.UserContext;
 import com.fraudshield.report.model.FraudReport;
 import com.fraudshield.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,23 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final UserContext userContext;
+
+
+    @GetMapping("/my-reports")
+    public ResponseEntity<List<FraudReport>> getMyReports() {
+        String userId = userContext.getCurrentUserId();
+        String role = userContext.getCurrentUserRole();
+        log.info("Fetching reports for: {} role: {}",
+                userId, role);
+
+        if ("ADMIN".equals(role) || "ANALYST".equals(role)) {
+            return ResponseEntity.ok(
+                    reportService.getReportsByStatus("BLOCKED"));
+        }
+        return ResponseEntity.ok(
+                reportService.getReportsByUserId(userId));
+    }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<FraudReport>> getReportsByUserId(

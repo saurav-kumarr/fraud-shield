@@ -1,5 +1,6 @@
 package com.fraudshield.transaction.controller;
 
+import com.fraudshield.transaction.context.UserContext;
 import com.fraudshield.transaction.dto.TransactionRequest;
 import com.fraudshield.transaction.dto.TransactionResponse;
 import com.fraudshield.transaction.service.TransactionService;
@@ -19,12 +20,13 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final UserContext userContext;
 
     @PostMapping
     public ResponseEntity<TransactionResponse> createTransaction(
             @Valid @RequestBody TransactionRequest request
             ){
-        log.info("Received transaction request for userId: {}", request.getUserId());
+        log.info("Received transaction request for userId: {}", userContext.getCurrentUserId());
         TransactionResponse response = transactionService.createTransaction(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -43,6 +45,14 @@ public class TransactionController {
         log.info("Fetching all transactions for userId: {}", userId);
         List<TransactionResponse> response = transactionService.getTransactionsByUserId(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/my-transactions")
+    public ResponseEntity<List<TransactionResponse>> getMyTransactions() {
+        String userId = userContext.getCurrentUserId();
+        log.info("Fetching transactions for: {}", userId);
+        return ResponseEntity.ok(
+                transactionService.getTransactionsByUserId(userId));
     }
 
 }
