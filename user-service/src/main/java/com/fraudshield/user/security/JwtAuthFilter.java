@@ -43,6 +43,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+        System.out.println("jwt: " + jwt);
         userEmail = jwtService.extractUsername(jwt);
 
         if(userEmail != null &&

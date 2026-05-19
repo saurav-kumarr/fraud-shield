@@ -60,6 +60,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         
+//        try {
+//            String token = authHeader.substring(7);
+//            Claims claims = Jwts.parser()
+//                    .verifyWith(getSigningKey())
+//                    .build()
+//                    .parseSignedClaims(token)
+//                    .getPayload();
+//
+////            UsernamePasswordAuthenticationToken authentication =
+////                    new UsernamePasswordAuthenticationToken(
+////                            claims.getSubject(), null, List.of());
+////
+////            SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//            // Add user info to headers for downstream services
+//            HttpServletRequestWrapper modifiedRequest =
+//                    new HttpServletRequestWrapper(request) {
+//                        @Override
+//                        public String getHeader(String name) {
+//                            if ("X-User-Id".equals(name))
+//                                return claims.getSubject();
+//                            if ("X-User-Email".equals(name))
+//                                return claims.getSubject();
+//                            if ("X-User-Role".equals(name)) {
+//                                Object role = claims.get("role");
+//                                return role != null ?
+//                                        role.toString() : "USER";
+//                            }
+//                            return super.getHeader(name);
+//                        }
+//                    };
+//
+//            log.info("JWT validated for user: {}", claims.getSubject());
+//            filterChain.doFilter(modifiedRequest, response);
+//        } catch (Exception e) {
+//
+//            log.error("JWT validation failed: {}", e.getMessage());
+//            sendError(response,
+//                    HttpStatus.UNAUTHORIZED,
+//                    "Invalid or expired token");
+//        }
+
         try {
             String token = authHeader.substring(7);
             Claims claims = Jwts.parser()
@@ -68,35 +110,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
 
-//            UsernamePasswordAuthenticationToken authentication =
-//                    new UsernamePasswordAuthenticationToken(
-//                            claims.getSubject(), null, List.of());
-//
-//            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String userId = claims.getSubject();
+            String userRole = claims.get("role",
+                    String.class) != null
+                    ? claims.get("role", String.class)
+                    : "USER";
 
-            // Add user info to headers for downstream services
-            HttpServletRequestWrapper modifiedRequest =
-                    new HttpServletRequestWrapper(request) {
-                        @Override
-                        public String getHeader(String name) {
-                            if ("X-User-Id".equals(name))
-                                return claims.getSubject();
-                            if ("X-User-Email".equals(name))
-                                return claims.getSubject();
-                            if ("X-User-Role".equals(name)) {
-                                Object role = claims.get("role");
-                                return role != null ?
-                                        role.toString() : "USER";
-                            }
-                            return super.getHeader(name);
-                        }
-                    };
+            // Use MutableHttpServletRequest
+            MutableHttpServletRequest mutableRequest =
+                    new MutableHttpServletRequest(request);
+            mutableRequest.putHeader("X-User-Id", userId);
+            mutableRequest.putHeader("X-User-Email", userId);
+            mutableRequest.putHeader("X-User-Role", userRole);
 
-            log.info("JWT validated for user: {}", claims.getSubject());
-            filterChain.doFilter(modifiedRequest, response);
+            log.info("JWT validated → user: {} role: {}",
+                    userId, userRole);
+
+            filterChain.doFilter(mutableRequest, response);
+
         } catch (Exception e) {
-
-            log.error("JWT validation failed: {}", e.getMessage());
+            log.error("JWT validation failed: {}",
+                    e.getMessage());
             sendError(response,
                     HttpStatus.UNAUTHORIZED,
                     "Invalid or expired token");
