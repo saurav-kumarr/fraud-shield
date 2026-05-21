@@ -2,6 +2,8 @@ package com.fraudshield.transaction.service;
 
 import com.fraudshield.transaction.dto.TransactionRequest;
 import com.fraudshield.transaction.dto.TransactionResponse;
+import com.fraudshield.transaction.exception.BadRequestException;
+import com.fraudshield.transaction.exception.ResourceNotFoundException;
 import com.fraudshield.transaction.kafka.TransactionEvent;
 import com.fraudshield.transaction.kafka.TransactionProducer;
 import com.fraudshield.transaction.model.Transaction;
@@ -27,6 +29,11 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request, String userId) {
+
+        if (userId == null || userId.isEmpty()) {
+            throw new BadRequestException(
+                    "User ID is required");
+        }
 
         log.info("Creating transaction for userId: {}", userId);
 
@@ -71,6 +78,10 @@ public class TransactionService {
     }
 
     public List<TransactionResponse> getTransactionsByUserId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new BadRequestException(
+                    "User ID is required");
+        }
         log.info("Fetching transactions for userId: {}", userId);
         return transactionRepository.findByUserId(userId)
                 .stream()
@@ -81,8 +92,8 @@ public class TransactionService {
     public TransactionResponse getTransactionById(String transactionId) {
         log.info("Fetching transaction ID: {}", transactionId);
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException(
-                        "Transaction not found: " + transactionId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Transaction not found with id: " + transactionId));
         return mapToResponse(transaction);
     }
 
