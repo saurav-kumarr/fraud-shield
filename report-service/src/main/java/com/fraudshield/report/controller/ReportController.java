@@ -32,7 +32,7 @@ public class ReportController {
 
         if ("ADMIN".equals(role) || "ANALYST".equals(role)) {
             return ResponseEntity.ok(
-                    reportService.getReportsByStatus("BLOCKED"));
+                    reportService.getAllReports());
         }
         return ResponseEntity.ok(
                 reportService.getReportsByUserId(userId));

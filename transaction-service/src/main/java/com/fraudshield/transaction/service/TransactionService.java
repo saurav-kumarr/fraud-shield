@@ -26,13 +26,13 @@ public class TransactionService {
     private final TransactionProducer transactionProducer;
 
     @Transactional
-    public TransactionResponse createTransaction(TransactionRequest request) {
+    public TransactionResponse createTransaction(TransactionRequest request, String userId) {
 
-        log.info("Creating transaction for userId: {}", request.getUserId());
+        log.info("Creating transaction for userId: {}", userId);
 
         // Step 1: Build Transaction entity from request
         Transaction transaction = Transaction.builder()
-                .userId(request.getUserId())
+                .userId(userId)
                 .merchantId(request.getMerchantId())
                 .amount(request.getAmount())
                 .currency(request.getCurrency())

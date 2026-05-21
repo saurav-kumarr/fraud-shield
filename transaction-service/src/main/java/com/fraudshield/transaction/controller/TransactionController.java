@@ -26,8 +26,9 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> createTransaction(
             @Valid @RequestBody TransactionRequest request
             ){
-        log.info("Received transaction request for userId: {}", userContext.getCurrentUserId());
-        TransactionResponse response = transactionService.createTransaction(request);
+        String userId = userContext.getCurrentUserId();
+        log.info("Received transaction request for userId: {}", userId);
+        TransactionResponse response = transactionService.createTransaction(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

@@ -18,8 +18,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TransactionRequest {
 
-    @NotBlank(message = "User ID is required")
-    private String userId;
+// LC1   @NotBlank(message = "User ID is required")
+//    private String userId;
 
     @NotBlank(message = "Merchant ID is required")
     private String merchantId;

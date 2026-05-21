@@ -121,5 +121,9 @@ public class ReportService {
                                 .withSecond(0));
     }
 
+    public List<FraudReport> getAllReports() {
+        return fraudReportRepository.findAll();
+    }
+
 
 }
