@@ -3,6 +3,8 @@ package com.fraudshield.user.service;
 import com.fraudshield.user.dto.AuthResponse;
 import com.fraudshield.user.dto.LoginRequest;
 import com.fraudshield.user.dto.RegisterRequest;
+import com.fraudshield.user.exception.BadRequestException;
+import com.fraudshield.user.exception.ResourceNotFoundException;
 import com.fraudshield.user.model.Role;
 import com.fraudshield.user.model.User;
 import com.fraudshield.user.repository.UserRepository;
@@ -35,7 +37,7 @@ public class UserService {
         log.info("Registering user: {}", request.getEmail());
 
         if(userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Email already registered: " + request.getEmail()
             );
         }
@@ -78,7 +80,7 @@ public class UserService {
         User user = userRepository.findByEmail(
                         request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new ResourceNotFoundException("User not found: "+ request.getEmail()));
 
         String token = jwtService.generateToken(user);
         log.info("Login successful for: {}", user.getEmail());
