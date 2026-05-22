@@ -1,0 +1,8 @@
+package com.fraudshield.alert.exception;
+
+public class BadRequestException
+        extends RuntimeException {
+    public BadRequestException(String message) {
+        super(message);
+    }
+}

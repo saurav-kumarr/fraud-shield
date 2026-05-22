@@ -1,6 +1,7 @@
 package com.fraudshield.report.service;
 
 import com.fraudshield.report.dto.FraudAlertEvent;
+import com.fraudshield.report.exception.BadRequestException;
 import com.fraudshield.report.model.FraudPattern;
 import com.fraudshield.report.model.FraudReport;
 import com.fraudshield.report.repository.FraudPatternRepository;
@@ -92,11 +93,23 @@ public class ReportService {
 
     public List<FraudReport> getReportsByUserId(
             String userId) {
+
+        if (userId == null || userId.isEmpty()) {
+            throw new BadRequestException(
+                    "User ID is required");
+        }
+
         return fraudReportRepository.findByUserId(userId);
     }
 
     public List<FraudReport> getReportsByStatus(
             String status) {
+
+        if (status == null || status.isEmpty()) {
+            throw new BadRequestException(
+                    "Status is required");
+        }
+
         return fraudReportRepository
                 .findByFraudStatus(status);
     }
