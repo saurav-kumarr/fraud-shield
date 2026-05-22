@@ -98,7 +98,9 @@ public class AlertController {
     }
 
     private boolean isValidStatus(String status) {
-        return status != null && (
+        return status != null
+                &&
+                (
                 "APPROVED".equals(status) ||
                         "BLOCKED".equals(status) ||
                         "FLAGGED".equals(status));
