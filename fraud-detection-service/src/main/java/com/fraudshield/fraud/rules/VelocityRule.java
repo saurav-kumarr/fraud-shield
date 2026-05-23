@@ -42,7 +42,7 @@ public class VelocityRule implements FraudRule{
 
     @Override
     public String getRuleName() {
-        return "VELOCITY_RILE";
+        return "VELOCITY_RULE";
     }
 
     @Override
