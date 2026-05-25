@@ -48,6 +48,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
+        // Skip OPTIONS requests (CORS preflight)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // Skip public URLs
         for (String url : PUBLIC_URLS) {
             if (path.startsWith(url)) {

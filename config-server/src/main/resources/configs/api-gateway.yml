@@ -49,6 +49,22 @@ spring:
               predicates:
                 - Path=/api/reports/**
 
+  web:
+    cors:
+      allowed-origin-patterns:
+        - "http://localhost:5173"
+        - "http://localhost:3000"
+        - "http://localhost:*"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+      max-age: 3600
+
 security:
   jwt:
     secret: ${JWT_SECRET}
