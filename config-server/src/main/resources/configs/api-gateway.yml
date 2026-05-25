@@ -19,6 +19,16 @@ spring:
               predicates:
                 - Path=/api/users/**
 
+            - id: merchant-registration
+              uri: lb://user-service
+              predicates:
+                - Path=/api/merchant/**
+
+            - id: b2b-transactions
+              uri: lb://transaction-service
+              predicates:
+                - Path=/api/v1/transactions/**
+
             - id: transaction-service
               uri: lb://transaction-service
               predicates:

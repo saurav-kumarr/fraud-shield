@@ -32,6 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] PUBLIC_URLS = {
             "/api/auth/register",
             "/api/auth/login",
+            "/api/merchant/register",
+            "/api/merchant/validate",
+            "/api/v1/",  // ← B2B endpoints use API key, not JWT
             "/actuator",
             "/ws"
     };

@@ -56,6 +56,18 @@ Eureka:     http://localhost:8761
 
 ---
 
+## 📚 Service Documentation
+- [API Gateway](docs/services/api-gateway.md)
+- [Transaction Service](docs/services/transaction-service.md)
+- [Fraud Detection Service](docs/services/fraud-detection-service.md)
+- [Alert Service](docs/services/alert-service.md)
+- [User Service](docs/services/user-service.md)
+- [Report Service](docs/services/report-service.md)
+- [Eureka Server](docs/services/eureka-server.md)
+- [Config Server](docs/services/config-server.md)
+
+---
+
 ## 👨‍💻 Author
 
 **Saurav Kumar**
