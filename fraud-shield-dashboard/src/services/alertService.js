@@ -12,4 +12,10 @@ export const alertService = {
         `/api/alerts/status/${status}`);
     return response.data;
   },
+
+    getAlertsByUserId: async (userId) => {
+    const response = await api.get(
+        `/api/alerts/user/${userId}`);
+    return response.data;
+  },
 };

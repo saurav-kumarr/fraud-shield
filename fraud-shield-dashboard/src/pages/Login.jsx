@@ -136,6 +136,16 @@ const Login = () => {
             Register
           </Link>
         </p>
+        <p className="text-center text-gray-600 mt-3">
+  Are you a business?{' '}
+  <Link 
+    to="/merchant-register" 
+    className="text-green-600 hover:underline 
+               font-semibold"
+  >
+    Get API Key
+  </Link>
+</p>
       </div>
     </div>
   );

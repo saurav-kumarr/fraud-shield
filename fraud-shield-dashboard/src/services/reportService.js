@@ -7,6 +7,24 @@ export const reportService = {
     return response.data;
   },
 
+  getReportsByUserId: async (userId) => {
+    const response = await api.get(
+        `/api/reports/user/${userId}`);
+    return response.data;
+  },
+
+  getReportsByStatus: async (status) => {
+    const response = await api.get(
+        `/api/reports/status/${status}`);
+    return response.data;
+  },
+
+  getReportsByMerchant: async (merchantId) => {
+    const response = await api.get(
+        `/api/reports/merchant/${merchantId}`);
+    return response.data;
+  },
+
   getTotalFraudCount: async () => {
     const response = await api.get(
         '/api/reports/stats/total-fraud');

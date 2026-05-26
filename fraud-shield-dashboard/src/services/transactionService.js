@@ -18,4 +18,10 @@ export const transactionService = {
     const response = await api.get(`/api/transactions/${id}`);
     return response.data;
   },
+
+  getTransactionsByUserId: async (userId) => {
+    const response = await api.get(
+        `/api/transactions/user/${userId}`);
+    return response.data;
+  },
 };
