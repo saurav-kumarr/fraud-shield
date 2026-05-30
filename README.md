@@ -21,8 +21,6 @@ A production-grade real-time fraud detection system built with Spring Boot micro
 
 ## 📸 Screenshots
 
-## 📸 Screenshots
-
 ### 🔐 Authentication
 <table>
   <tr>
