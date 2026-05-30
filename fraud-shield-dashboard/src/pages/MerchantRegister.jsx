@@ -1,18 +1,23 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { merchantService } from '../services/merchantService';
-import { 
-  Building, Mail, User, Globe, 
-  Copy, Check, ArrowLeft 
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { merchantService } from "../services/merchantService";
+import {
+  Building,
+  Mail,
+  User,
+  Globe,
+  Copy,
+  Check,
+  ArrowLeft,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 const MerchantRegister = () => {
   const [formData, setFormData] = useState({
-    merchantName: '',
-    merchantEmail: '',
-    companyName: '',
-    webhookUrl: '',
+    merchantName: "",
+    merchantEmail: "",
+    companyName: "",
+    webhookUrl: "",
   });
   const [loading, setLoading] = useState(false);
   const [apiKeyResponse, setApiKeyResponse] = useState(null);
@@ -30,14 +35,11 @@ const MerchantRegister = () => {
     setLoading(true);
 
     try {
-      const response = await merchantService
-          .registerMerchant(formData);
+      const response = await merchantService.registerMerchant(formData);
       setApiKeyResponse(response);
-      toast.success('API Key generated successfully!');
+      toast.success("API Key generated successfully!");
     } catch (error) {
-      toast.error(
-          error.response?.data?.message || 
-          'Registration failed');
+      toast.error(error.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -46,80 +48,85 @@ const MerchantRegister = () => {
   const copyApiKey = () => {
     navigator.clipboard.writeText(apiKeyResponse.apiKey);
     setCopied(true);
-    toast.success('API Key copied!');
+    toast.success("API Key copied!");
     setTimeout(() => setCopied(false), 3000);
   };
 
   if (apiKeyResponse) {
     return (
-      <div className="min-h-screen bg-gradient-to-br 
+      <div
+        className="min-h-screen bg-gradient-to-br 
                       from-green-500 to-blue-600 
-                      flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl 
-                        p-8 w-full max-w-2xl">
-          
+                      flex items-center justify-center p-4"
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl 
+                        p-8 w-full max-w-2xl"
+        >
           <div className="text-center mb-6">
-            <div className="bg-green-100 w-20 h-20 rounded-full 
+            <div
+              className="bg-green-100 w-20 h-20 rounded-full 
                             flex items-center justify-center 
-                            mx-auto mb-4">
+                            mx-auto mb-4"
+            >
               <Check className="w-12 h-12 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800">
               Registration Successful!
             </h1>
             <p className="text-gray-600 mt-2">
-              Save your API key securely. 
-              You won't be able to see it again.
+              Save your API key securely. You won't be able to see it again.
             </p>
           </div>
 
-          <div className="bg-yellow-50 border-l-4 
-                          border-yellow-500 p-4 mb-6">
-            <p className="text-sm text-yellow-800 
-                          font-semibold">
-              ⚠️ Important: Save this API key now. 
-              It cannot be retrieved later.
+          <div
+            className="bg-yellow-50 border-l-4 
+                          border-yellow-500 p-4 mb-6"
+          >
+            <p
+              className="text-sm text-yellow-800 
+                          font-semibold"
+            >
+              ⚠️ Important: Save this API key now. It cannot be retrieved later.
             </p>
           </div>
 
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-500 mb-2">
-              Your API Key
-            </p>
+            <p className="text-sm text-gray-500 mb-2">Your API Key</p>
             <div className="flex items-center space-x-2">
-              <code className="flex-1 bg-white px-4 py-3 
+              <code
+                className="flex-1 bg-white px-4 py-3 
                                rounded-lg font-mono text-sm 
-                               break-all border border-gray-200">
+                               break-all border border-gray-200"
+              >
                 {apiKeyResponse.apiKey}
               </code>
               <button
                 onClick={copyApiKey}
                 className={`p-3 rounded-lg transition ${
-                  copied 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  copied
+                    ? "bg-green-500 text-white"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                {copied ? 
-                  <Check className="w-5 h-5" /> : 
-                  <Copy className="w-5 h-5" />}
+                {copied ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <Copy className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500">
-                Company
-              </p>
+              <p className="text-xs text-gray-500">Company</p>
               <p className="font-semibold text-gray-800">
                 {apiKeyResponse.companyName}
               </p>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500">
-                Tier
-              </p>
+              <p className="text-xs text-gray-500">Tier</p>
               <p className="font-semibold text-purple-700">
                 {apiKeyResponse.tier}
               </p>
@@ -127,13 +134,17 @@ const MerchantRegister = () => {
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm font-semibold text-gray-700 
-                          mb-2">
+            <p
+              className="text-sm font-semibold text-gray-700 
+                          mb-2"
+            >
               How to use this API key:
             </p>
-            <pre className="bg-gray-800 text-green-400 p-4 
-                            rounded text-xs overflow-x-auto">
-{`POST http://localhost:8080/api/v1/transactions/analyze
+            <pre
+              className="bg-gray-800 text-green-400 p-4 
+                            rounded text-xs overflow-x-auto"
+            >
+              {`POST http://localhost:8080/api/v1/transactions/analyze
 
 Headers:
   X-API-Key: ${apiKeyResponse.apiKey.substring(0, 20)}...
@@ -166,14 +177,17 @@ Body:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br 
+    <div
+      className="min-h-screen bg-gradient-to-br 
                     from-green-500 to-blue-600 
-                    flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl 
-                      p-8 w-full max-w-md">
-        
-        <Link 
-          to="/login" 
+                    flex items-center justify-center p-4"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl 
+                      p-8 w-full max-w-md"
+      >
+        <Link
+          to="/login"
           className="flex items-center text-gray-500 
                      hover:text-gray-700 mb-4"
         >
@@ -194,15 +208,18 @@ Body:
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <div>
-            <label className="block text-sm font-medium 
-                              text-gray-700 mb-2">
+            <label
+              className="block text-sm font-medium 
+                              text-gray-700 mb-2"
+            >
               Company Name *
             </label>
             <div className="relative">
-              <Building className="absolute left-3 top-3.5 
-                                   w-5 h-5 text-gray-400" />
+              <Building
+                className="absolute left-3 top-3.5 
+                                   w-5 h-5 text-gray-400"
+              />
               <input
                 type="text"
                 name="companyName"
@@ -218,13 +235,17 @@ Body:
           </div>
 
           <div>
-            <label className="block text-sm font-medium 
-                              text-gray-700 mb-2">
+            <label
+              className="block text-sm font-medium 
+                              text-gray-700 mb-2"
+            >
               Contact Name *
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-3.5 
-                               w-5 h-5 text-gray-400" />
+              <User
+                className="absolute left-3 top-3.5 
+                               w-5 h-5 text-gray-400"
+              />
               <input
                 type="text"
                 name="merchantName"
@@ -240,13 +261,17 @@ Body:
           </div>
 
           <div>
-            <label className="block text-sm font-medium 
-                              text-gray-700 mb-2">
+            <label
+              className="block text-sm font-medium 
+                              text-gray-700 mb-2"
+            >
               Email *
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3.5 
-                               w-5 h-5 text-gray-400" />
+              <Mail
+                className="absolute left-3 top-3.5 
+                               w-5 h-5 text-gray-400"
+              />
               <input
                 type="email"
                 name="merchantEmail"
@@ -262,13 +287,17 @@ Body:
           </div>
 
           <div>
-            <label className="block text-sm font-medium 
-                              text-gray-700 mb-2">
+            <label
+              className="block text-sm font-medium 
+                              text-gray-700 mb-2"
+            >
               Webhook URL (Optional)
             </label>
             <div className="relative">
-              <Globe className="absolute left-3 top-3.5 
-                                w-5 h-5 text-gray-400" />
+              <Globe
+                className="absolute left-3 top-3.5 
+                                w-5 h-5 text-gray-400"
+              />
               <input
                 type="url"
                 name="webhookUrl"
@@ -293,19 +322,23 @@ Body:
                        hover:bg-green-700 transition 
                        disabled:bg-gray-400"
           >
-            {loading ? 'Generating API Key...' : 
-                'Get API Key'}
+            {loading ? "Generating API Key..." : "Get API Key"}
           </button>
         </form>
 
         <p className="text-center text-gray-600 mt-6">
-          Have an account?{' '}
-          <Link 
-            to="/login" 
+          Have an account?{" "}
+          <Link
+            to="/login"
             className="text-green-600 hover:underline 
                        font-semibold"
           >
             Sign In
+          </Link>
+        </p>
+        <p className="text-center text-gray-500 text-sm mt-3">
+          <Link to="/api-docs" className="text-blue-600 hover:underline">
+            Read API Documentation
           </Link>
         </p>
       </div>
