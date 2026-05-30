@@ -383,7 +383,7 @@ MIT License - feel free to use for learning purposes.
 **Saurav Kumar**
 - LinkedIn: [Saurav Kumar](https://www.linkedin.com/in/saurav-kumar-java-developer)
 - GitHub: [@saurav-kumarr](https://github.com/saurav-kumarr)
-- Email: csaurav2014@example.com
+- Email: csaurav2014@gmail.com
 
 ## 🙏 Acknowledgments
 
