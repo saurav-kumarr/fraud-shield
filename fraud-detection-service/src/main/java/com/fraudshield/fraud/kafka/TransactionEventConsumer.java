@@ -24,8 +24,8 @@ public class TransactionEventConsumer {
             groupId = "${spring.kafka.consumer.group-id}"
     )
     public void consumeTransactionEvent(TransactionEvent event) {
-        log.info("Received transaction event: {}",
-                event.getTransactionId());
+        log.info("Received transaction event: {} on thread: {}",
+                event.getTransactionId(), Thread.currentThread().getName());
 
         EngineResult result = fraudDetectionService.analyzeTransaction(event);
 

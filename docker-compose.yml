@@ -1,8 +1,22 @@
-
+# =============================================================================
+#  Fraud Shield - Complete Docker Compose Stack
+#  Builds and runs all 8 microservices + all infrastructure together.
+#
+#  IMPORTANT FIXES vs your original file (explained fully in DOCKER_SETUP_GUIDE.md):
+#   1. Kafka now has a SECOND internal listener (kafka:29092) for container-to-
+#      container traffic. Your original only advertised "localhost:9092", which
+#      only works from your HOST machine, not from other containers.
+#   2. Every microservice gets its DB/Kafka/Redis/Eureka addresses overridden via
+#      environment variables to use container/service names (e.g. "postgres",
+#      "kafka:29092") instead of "localhost" - localhost inside a container
+#      means "this container", not the other one.
+# =============================================================================
 
 services:
 
-  # PostgreSQL
+  # ===========================================================================
+  # INFRASTRUCTURE (your original services, with healthchecks + the Kafka fix)
+  # ===========================================================================
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -30,8 +44,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - fraud-shield-network
-
-  # MongoDB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongo-express:
     image: mongo-express:latest
@@ -57,8 +74,12 @@ services:
       - mongo_data:/data/db
     networks:
       - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis
   redis:
     image: redis:7-alpine
     container_name: fraud-shield-redis
@@ -66,8 +87,12 @@ services:
       - "6379:6379"
     networks:
       - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: fraud-shield-zookeeper
@@ -79,7 +104,11 @@ services:
     networks:
       - fraud-shield-network
 
-  # Kafka
+  # ---- FIX #1: Kafka now has TWO listeners ----
+  # PLAINTEXT (localhost:9092)        -> for tools on your HOST machine
+  # PLAINTEXT_INTERNAL (kafka:29092)  -> for OTHER CONTAINERS to reach Kafka
+  # Your original config only had the first one, which breaks container-to-
+  # container communication (a very common real-world Kafka+Docker mistake).
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: fraud-shield-kafka
@@ -90,13 +119,21 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
     networks:
       - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 8
+      start_period: 20s
 
-  # Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: fraud-shield-prometheus
@@ -107,7 +144,6 @@ services:
     networks:
       - fraud-shield-network
 
-  # Grafana
   grafana:
     image: grafana/grafana:latest
     container_name: fraud-shield-grafana
@@ -125,7 +161,6 @@ services:
       - prometheus
       - loki
 
-  # Loki (Log Aggregation)
   loki:
     image: grafana/loki:latest
     container_name: fraud-shield-loki
@@ -138,7 +173,6 @@ services:
     networks:
       - fraud-shield-network
 
-  # Alloy (Log Collector)
   alloy:
     image: grafana/alloy:latest
     container_name: fraud-shield-alloy
@@ -153,7 +187,6 @@ services:
     depends_on:
       - loki
 
-  # Tempo (Distributed Tracing)
   tempo:
     image: grafana/tempo:1.5.0
     container_name: fraud-shield-tempo
@@ -166,6 +199,229 @@ services:
     command: -config.file=/etc/tempo/tempo-config.yml
     networks:
       - fraud-shield-network
+
+  # ===========================================================================
+  # MICROSERVICES (new - built from your source code)
+  # ===========================================================================
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/eureka-server:latest
+    container_name: fraud-shield-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      # Eureka's own dashboard at "/" always exists, even without Actuator on
+      # the classpath - safer than depending on /actuator/health being present.
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  config-server:
+    build:
+      context: .
+      dockerfile: config-server/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/config-server:latest
+    container_name: fraud-shield-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,native
+      #SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: classpath:/configs
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/api-gateway:latest
+    container_name: fraud-shield-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      # MUST match user-service's JWT_SECRET exactly - api-gateway VERIFIES
+      # the token that user-service SIGNS, using the same shared HMAC key.
+      #JWT_SECRET: DockerComposeDevJwtSecretPleaseChangeInProd1234567890ABCDEFGH
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  transaction-service:
+    build:
+      context: .
+      dockerfile: transaction-service/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/transaction-service:latest
+    container_name: fraud-shield-transaction-service
+    ports:
+      - "8081:8081"
+    environment:
+      # Docker-specific config now lives in application-docker.yml, committed
+      # in the service's own source tree - see that file for the full list.
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  fraud-detection-service:
+    build:
+      context: .
+      dockerfile: fraud-detection-service/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-detection-service:latest
+    container_name: fraud-shield-fraud-detection-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  alert-service:
+    build:
+      context: .
+      dockerfile: alert-service/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/alert-service:latest
+    container_name: fraud-shield-alert-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      # FIX: alert-service actually uses PostgreSQL, not MongoDB - my original
+      # docker-compose.yml guessed wrong before I saw the real config.
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/user-service:latest
+    container_name: fraud-shield-user-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # user-service SIGNS the JWT with this secret - api-gateway must use the
+      # exact same value to VERIFY it (HS384 is symmetric, one shared key).
+      # FIX: this was never set before, so user-service would crash on the
+      # first token issue with "Could not resolve placeholder 'JWT_SECRET'".
+      #JWT_SECRET: DockerComposeDevJwtSecretPleaseChangeInProd1234567890ABCDEFGH
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  report-service:
+    build:
+      context: .
+      dockerfile: report-service/Dockerfile
+    image: ghcr.io/saurav-kumarr/fraud-shield/report-service:latest
+    container_name: fraud-shield-report-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      # FIX: report-service uses BOTH Postgres AND MongoDB (per its real
+      # config) - postgres was missing from this list before.
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 networks:
   fraud-shield-network:

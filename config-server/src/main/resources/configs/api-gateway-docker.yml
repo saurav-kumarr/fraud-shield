@@ -1,3 +1,14 @@
+# =============================================================================
+#  api-gateway - Docker profile configuration
+#  Activated via SPRING_PROFILES_ACTIVE=docker (set in docker-compose.yml).
+#  Self-sufficient: every setting needed to run inside Docker lives here, so
+#  this service does NOT depend on Config Server being reachable to start
+#  correctly (spring.config.import below is a bonus/backup, not a hard
+#  requirement). Every 'localhost' from the original config has been replaced
+#  with the correct Docker service name.
+# =============================================================================
+
+
 server:
   port: 8080
 
@@ -75,7 +86,7 @@ security:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
 
 management:
   endpoints:
@@ -93,4 +104,4 @@ management:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: http://localhost:9411/api/v2/spans
+      endpoint: http://tempo:9411/api/v2/spans

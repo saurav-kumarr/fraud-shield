@@ -10,7 +10,8 @@ spring:
     config:
       server:
         native:
-          search-locations: file:./config-server/src/main/resources/configs
+          search-locations: classpath:/configs
+        #search-locations: file:./config-server/src/main/resources/configs
     bus:
       enabled: true
     stream:
@@ -19,7 +20,7 @@ spring:
                 consumer-properties:
                   value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:29092
 
 management:
   endpoints:

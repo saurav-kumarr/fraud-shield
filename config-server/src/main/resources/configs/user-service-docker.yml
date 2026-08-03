@@ -1,0 +1,54 @@
+# =============================================================================
+#  user-service - Docker profile configuration
+#  Activated via SPRING_PROFILES_ACTIVE=docker (set in docker-compose.yml).
+#  Self-sufficient: every setting needed to run inside Docker lives here, so
+#  this service does NOT depend on Config Server being reachable to start
+#  correctly (spring.config.import below is a bonus/backup, not a hard
+#  requirement). Every 'localhost' from the original config has been replaced
+#  with the correct Docker service name.
+# =============================================================================
+
+
+server:
+  port: 8084
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fraudshielddb?TimeZone=Asia/Kolkata
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://tempo:9411/api/v2/spans
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000
