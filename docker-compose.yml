@@ -253,6 +253,8 @@ services:
       dockerfile: api-gateway/Dockerfile
     image: ghcr.io/saurav-kumarr/fraud-shield/api-gateway:latest
     container_name: fraud-shield-api-gateway
+    env_file:
+      - ./api-gateway/.env
     ports:
       - "8080:8080"
     environment:
@@ -262,7 +264,7 @@ services:
       # MUST match user-service's JWT_SECRET exactly - api-gateway VERIFIES
       # the token that user-service SIGNS, using the same shared HMAC key.
       #JWT_SECRET: DockerComposeDevJwtSecretPleaseChangeInProd1234567890ABCDEFGH
-      JWT_SECRET: ${JWT_SECRET}
+      #JWT_SECRET: ${JWT_SECRET}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -298,6 +300,8 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
     networks:
       - fraud-shield-network
     healthcheck:
@@ -325,6 +329,8 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - fraud-shield-network
@@ -354,6 +360,8 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
     networks:
       - fraud-shield-network
     healthcheck:
@@ -369,6 +377,8 @@ services:
       dockerfile: user-service/Dockerfile
     image: ghcr.io/saurav-kumarr/fraud-shield/user-service:latest
     container_name: fraud-shield-user-service
+    env_file:
+      - ./user-service/.env
     ports:
       - "8084:8084"
     environment:
@@ -378,11 +388,17 @@ services:
       # FIX: this was never set before, so user-service would crash on the
       # first token issue with "Could not resolve placeholder 'JWT_SECRET'".
       #JWT_SECRET: DockerComposeDevJwtSecretPleaseChangeInProd1234567890ABCDEFGH
-      JWT_SECRET: ${JWT_SECRET}
+      #JWT_SECRET: ${JWT_SECRET}
+      # Spring Kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      # Spring Cloud Stream Kafka Binder / Spring Cloud Bus
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - fraud-shield-network
@@ -414,6 +430,8 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
     networks:
       - fraud-shield-network
     healthcheck:
@@ -422,6 +440,33 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  fraud-shield-dashboard:
+    build:
+      context: ./fraud-shield-dashboard
+    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-shield-dashboard:latest
+    container_name: fraud-shield-dashboard
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      # nginx proxies /ws directly to alert-service (not through the
+      # gateway) - it needs to be reachable and healthy too.
+      alert-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - fraud-shield-network
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 networks:
   fraud-shield-network:

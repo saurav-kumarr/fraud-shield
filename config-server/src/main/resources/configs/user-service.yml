@@ -13,6 +13,18 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  # Spring Kafka
+  kafka:
+    bootstrap-servers: localhost:9092
+
+  # Spring Cloud Bus -> Spring Cloud Stream -> Kafka Binder
+  cloud:
+    bus:
+      enabled: true
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
 
 eureka:
   client:

@@ -18,6 +18,7 @@ env:
   SERVICES: >-
     eureka-server config-server api-gateway transaction-service
     fraud-detection-service alert-service user-service report-service
+    fraud-shield-dashboard
 
 jobs:
   docker:

@@ -17,20 +17,20 @@ public class CorsConfig {
     public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
+        // Required if browser sends credentials/cookies
         corsConfiguration.setAllowCredentials(true);
+
+        // Frontend origins allowed to call API Gateway directly
         corsConfiguration.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "http://localhost:3000",
-                "http://localhost:*"
+                "http://localhost:3000"
         ));
-        corsConfiguration.setAllowedOriginPatterns(List.of("*"));
+
         corsConfiguration.setAllowedHeaders(List.of(
                 "Authorization",
                 "Content-Type",
                 "Accept",
-                "X-Requested-With",
-                "X-Rate-Limit-Remaining",
-                "X-Rate-Limit-Retry-After"
+                "X-Requested-With"
         ));
 
         corsConfiguration.setAllowedMethods(List.of(
@@ -41,6 +41,14 @@ public class CorsConfig {
                 "OPTIONS",
                 "PATCH"
         ));
+
+        // Allow frontend JavaScript to read these response headers
+        corsConfiguration.setExposedHeaders(List.of(
+                "X-Rate-Limit-Remaining",
+                "X-Rate-Limit-Retry-After"
+        ));
+
+
         corsConfiguration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
