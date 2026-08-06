@@ -8,8 +8,8 @@
 name: Build & Push Docker Images
 
 on:
-  push:
-    branches: [ main ]
+#  push:
+#    branches: [ main ]
   workflow_dispatch:
 
 # The exact 8 service names from docker-compose.yml - reused in both steps
