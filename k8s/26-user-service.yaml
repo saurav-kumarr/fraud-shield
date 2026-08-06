@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: fraud-shield
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: user-service }
+  template:
+    metadata:
+      labels: { app: user-service }
+    spec:
+      containers:
+        - name: user-service
+          image: ghcr.io/saurav-kumarr/fraud-shield/user-service:latest
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            # user-service issues the JWT, so it signs with this secret -
+            # api-gateway uses the SAME secret to verify it (HMAC, one shared key).
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: fraud-shield-secrets, key: JWT_SECRET }
+          resources:
+            requests: { memory: "256Mi", cpu: "150m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: fraud-shield
+spec:
+  selector: { app: user-service }
+  ports:
+    - port: 8084
+      targetPort: 8084

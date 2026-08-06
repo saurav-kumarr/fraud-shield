@@ -1,0 +1,33 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - name: Runner information
+        shell: powershell
+        run: |
+          Write-Host "Runner machine:"
+          hostname
+
+          Write-Host "Current user:"
+          whoami
+
+      - name: Check Docker
+        shell: powershell
+        run: |
+          docker version
+
+      - name: Check Docker Compose
+        shell: powershell
+        run: |
+          docker compose version
+
+      - name: Show running containers
+        shell: powershell
+        run: |
+          docker ps

@@ -1,0 +1,6 @@
+# Everything for this project lives in its own namespace, so it's isolated
+# from anything else running on your cluster and easy to delete/reset as a whole.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fraud-shield

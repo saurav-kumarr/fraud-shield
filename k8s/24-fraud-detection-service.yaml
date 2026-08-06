@@ -1,0 +1,75 @@
+# =============================================================================
+#  fraud-detection-service
+#  Runs with 3 replicas from the start - matching your 3 Kafka partitions on
+#  transaction-events. This is the direct Kubernetes answer to the question
+#  you asked earlier: "can multiple users' fraud checks run in parallel?"
+#  Kafka distributes the 3 partitions across these 3 pods automatically,
+#  since they all share the same consumer group (fraud-detection-group).
+#  An HPA (Horizontal Pod Autoscaler) is included so it can scale up further
+#  automatically under real load.
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-detection-service
+  namespace: fraud-shield
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: fraud-detection-service }
+  template:
+    metadata:
+      labels: { app: fraud-detection-service }
+    spec:
+      containers:
+        - name: fraud-detection-service
+          image: ghcr.io/saurav-kumarr/fraud-shield/fraud-detection-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "600m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-detection-service
+  namespace: fraud-shield
+spec:
+  selector: { app: fraud-detection-service }
+  ports:
+    - port: 8082
+      targetPort: 8082
+---
+# Auto-scales fraud-detection-service between 3 and 10 pods based on CPU.
+# Requires the metrics-server addon: `minikube addons enable metrics-server`
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fraud-detection-service-hpa
+  namespace: fraud-shield
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fraud-detection-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
