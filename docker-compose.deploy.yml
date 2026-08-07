@@ -257,7 +257,7 @@ services:
   # ===========================================================================
 
   eureka-server:
-    image: ghcr.io/saurav-kumarr/fraud-shield/eureka-server:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/eureka-server:${IMAGE_TAG:-latest}
     container_name: fraud-shield-eureka-server
 
     ports:
@@ -286,7 +286,7 @@ services:
   # ===========================================================================
 
   config-server:
-    image: ghcr.io/saurav-kumarr/fraud-shield/config-server:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/config-server:${IMAGE_TAG:-latest}
     container_name: fraud-shield-config-server
 
     ports:
@@ -324,7 +324,7 @@ services:
   # ===========================================================================
 
   api-gateway:
-    image: ghcr.io/saurav-kumarr/fraud-shield/api-gateway:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/api-gateway:${IMAGE_TAG:-latest}
     container_name: fraud-shield-api-gateway
 
     env_file:
@@ -369,7 +369,7 @@ services:
   # ===========================================================================
 
   transaction-service:
-    image: ghcr.io/saurav-kumarr/fraud-shield/transaction-service:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/transaction-service:${IMAGE_TAG:-latest}
     container_name: fraud-shield-transaction-service
 
     ports:
@@ -417,7 +417,7 @@ services:
   # ===========================================================================
 
   fraud-detection-service:
-    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-detection-service:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-detection-service:${IMAGE_TAG:-latest}
     container_name: fraud-shield-fraud-detection-service
 
     ports:
@@ -465,7 +465,7 @@ services:
   # ===========================================================================
 
   alert-service:
-    image: ghcr.io/saurav-kumarr/fraud-shield/alert-service:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/alert-service:${IMAGE_TAG:-latest}
     container_name: fraud-shield-alert-service
 
     ports:
@@ -510,7 +510,7 @@ services:
   # ===========================================================================
 
   user-service:
-    image: ghcr.io/saurav-kumarr/fraud-shield/user-service:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/user-service:${IMAGE_TAG:-latest}
     container_name: fraud-shield-user-service
 
     env_file:
@@ -563,7 +563,7 @@ services:
   # ===========================================================================
 
   report-service:
-    image: ghcr.io/saurav-kumarr/fraud-shield/report-service:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/report-service:${IMAGE_TAG:-latest}
     container_name: fraud-shield-report-service
 
     ports:
@@ -611,7 +611,7 @@ services:
   # ===========================================================================
 
   fraud-shield-dashboard:
-    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-shield-dashboard:latest
+    image: ghcr.io/saurav-kumarr/fraud-shield/fraud-shield-dashboard:${IMAGE_TAG:-latest}
     container_name: fraud-shield-dashboard
 
     ports:
