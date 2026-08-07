@@ -28,12 +28,12 @@ jobs:
           "JWT_SECRET=$env:JWT_SECRET" | Set-Content -Path "api-gateway\.env"
           "JWT_SECRET=$env:JWT_SECRET" | Set-Content -Path "user-service\.env"
 
-      - name: Login to GHCR
-        shell: powershell
-        run: |
-          "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io `
-            -u "${{ github.actor }}" `
-            --password-stdin
+#      - name: Login to GHCR
+#        shell: powershell
+#        run: |
+#          "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io `
+#            -u "${{ secrets.GHCR_USERNAME }}" `
+#            --password-stdin
 
       - name: Pull latest images
         shell: powershell
