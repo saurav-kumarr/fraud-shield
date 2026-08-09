@@ -78,7 +78,7 @@ jobs:
       - name: Build & push changed services
         env:
           GIT_SHA: ${{ github.sha }}
-        run: docker buildx bake --push ${{ needs.detect.outputs.services }}
+        run: docker buildx bake -f docker-bake.hcl --push ${{ needs.detect.outputs.services }}
 
       # Moves the baseline forward so the NEXT run's diff starts from here -
       # this is what makes changed-service detection work correctly even
