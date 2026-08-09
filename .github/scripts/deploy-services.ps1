@@ -55,15 +55,21 @@ Write-Host "`n--- Capturing current image tags (rollback safety net) ---" -Foreg
 $PreviousTags = @{}
 foreach ($svc in $ServiceList) {
     $containerName = "fraud-shield-$svc"
-    $currentImage = docker inspect --format '{{.Config.Image}}' $containerName 2>$null
-    if ($LASTEXITCODE -eq 0 -and $currentImage) {
-        $prevTag = $currentImage.Substring($currentImage.LastIndexOf(':') + 1)
-        $PreviousTags[$svc] = $prevTag
-        Write-Host "  $svc currently on tag: $prevTag"
-    }
-    else {
-        Write-Host "  $svc has no existing container (first deploy - no rollback target)"
-    }
+   try {
+       $currentImage = docker inspect --format '{{.Config.Image}}' $containerName 2>$null
+
+       if ($LASTEXITCODE -eq 0 -and $currentImage) {
+           $prevTag = $currentImage.Substring($currentImage.LastIndexOf(':') + 1)
+           $PreviousTags[$svc] = $prevTag
+           Write-Host "  $svc currently on tag: $prevTag"
+       }
+       else {
+           Write-Host "  $svc has no existing container (first deploy)"
+       }
+   }
+   catch {
+       Write-Host "  $svc has no existing container (first deploy)"
+   }
 }
 
 # --- Step 2: pull the new images for ONLY these services ---
