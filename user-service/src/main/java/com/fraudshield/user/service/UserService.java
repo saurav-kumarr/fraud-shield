@@ -34,7 +34,7 @@ public class UserService {
 
 
     public AuthResponse register(RegisterRequest request) {
-        log.info("Registering user: {}", request.getEmail());
+        log.info("Registering user: {}", request.getEmail() + "I am Saurav");
 
         if(userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException(
