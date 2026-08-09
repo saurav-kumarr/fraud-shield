@@ -1,44 +1,68 @@
-# Builds and pushes Docker images for the 8 Fraud Shield microservices.
-# Runs automatically on every push to main.
+# =============================================================================
+# Build & Push Docker Images (v2 - changed-service detection + Buildx Bake)
 #
-# IMPORTANT: this workflow only builds/pushes the 8 services YOU wrote.
-# It does NOT touch postgres, mongo, redis, kafka, grafana, etc. - those are
-# public third-party images pulled straight from Docker Hub, not built by you,
-# and must never be pushed to your own registry (see note below).
+# Two jobs:
+#   1. detect - figures out which services actually changed since the last
+#      successful build (via the last-ci-build git tag), outputs the list.
+#   2. build  - only runs if something changed; builds + pushes exactly
+#      those services using docker-bake.hcl, then moves last-ci-build to
+#      this commit so the next run diffs from here.
+#
+# Manual trigger only (workflow_dispatch) - intentional, not a placeholder.
+# This repo has other workflows that already trigger on push; enabling an
+# automatic push trigger here would create conflicts/noise alongside them.
+# =============================================================================
 name: Build & Push Docker Images
 
 on:
-#  push:
-#    branches: [ main ]
   workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  # Intentionally disabled - see note above. Re-enable only if/when the
+  # other workflows' triggers are reconciled with this one.
 
-# The exact 8 service names from docker-compose.yml - reused in both steps
-# below so the list only has to be maintained in one place.
-env:
-  SERVICES: >-
-    eureka-server config-server api-gateway transaction-service
-    fraud-detection-service alert-service user-service report-service
-    fraud-shield-dashboard
+permissions:
+  contents: write   # needed to move the last-ci-build tag after success
+  packages: write   # needed to push images to GitHub Container Registry
 
 jobs:
-  docker:
+  detect:
+    name: Detect changed services
     runs-on: ubuntu-latest
-    # If a build genuinely hangs (network issue our retry loop inside the
-    # Dockerfiles can't recover from), fail clearly after 45 minutes instead
-    # of silently running for GitHub's default 6-hour job limit.
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      packages: write       # needed to push images to GitHub Container Registry
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags required for the git diff
 
+      - name: Detect changed services
+        id: detect
+        run: |
+          chmod +x .github/scripts/detect-services.sh
+          SERVICES=$(.github/scripts/detect-services.sh)
+          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
+          if [ -z "$SERVICES" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Changed services: $SERVICES"
+
+  build:
+    name: Build & push changed services
+    needs: detect
+    if: needs.detect.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create CI environment files
-        run: |
-          touch user-service/.env
-          touch api-gateway/.env
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -47,25 +71,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Only builds services that have a "build:" section in docker-compose.yml
-      # (your 8 microservices) - postgres/mongo/redis/etc. are skipped
-      # automatically since they only have "image:" with no "build:".
-      #
-      # COMPOSE_PARALLEL_LIMIT=2: GitHub's free runners have only 2 CPU cores.
-      # Each service does a fresh, uncached Maven dependency download inside
-      # its own Docker build - running all 8 at once would fight over the
-      # same 2 cores and makes hitting a flaky network moment (like the
-      # DNS/download failures we saw locally) far more likely. Building 2 at
-      # a time is slower overall but far more reliable.
-      - name: Build images
+      # bake reads docker-bake.hcl directly - it does NOT parse
+      # docker-compose.yml, so the old "touch .env" workaround (needed
+      # because compose validates env_file: paths even at build time) is no
+      # longer necessary and has been removed.
+      - name: Build & push changed services
         env:
-          COMPOSE_PARALLEL_LIMIT: 2
-        run: docker compose build $SERVICES
+          GIT_SHA: ${{ github.sha }}
+        run: docker buildx bake --push ${{ needs.detect.outputs.services }}
 
-      # IMPORTANT FIX: "docker compose push" with no arguments tries to push
-      # EVERY service that has an "image:" field - including postgres:15,
-      # mongo:6, redis:7-alpine etc. That would fail (you don't own those
-      # image names on the registry) and could break the whole pipeline.
-      # Passing the explicit service list pushes ONLY what you built.
-      - name: Push images
-        run: docker compose push $SERVICES
+      # Moves the baseline forward so the NEXT run's diff starts from here -
+      # this is what makes changed-service detection work correctly even
+      # with sporadic manual triggers instead of a trigger on every push.
+      - name: Move last-ci-build tag to this commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f last-ci-build
+          git push origin last-ci-build --force
+
+  deploy:
+    name: Deploy
+    # Runs after build succeeds, using the SAME services list detect already
+    # computed - no artifacts or cross-workflow data passing needed, since
+    # this is a job within the same workflow run, not a separate workflow.
+    needs: [detect, build]
+    if: needs.detect.outputs.has_changes == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      services: ${{ needs.detect.outputs.services }}
+      image_tag: ${{ github.sha }}
+    secrets:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}

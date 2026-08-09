@@ -1,7 +1,42 @@
+# =============================================================================
+# Deploy Fraud Shield (reusable workflow)
+#
+# Two ways to run this:
+#   1. workflow_dispatch - manual, standalone (e.g. "just redeploy current
+#      latest without rebuilding anything").
+#   2. workflow_call - called BY another workflow (docker-ci.yml's deploy
+#      job, and later rollback.yml), passing exactly which services and
+#      which image tag to deploy. This is what makes "run the CI workflow
+#      once and everything happens" work - no second manual trigger needed.
+#
+# Runs on YOUR machine (self-hosted Windows runner), not GitHub's - this IS
+# the production target for this project, at zero cost.
+# =============================================================================
 name: Deploy Fraud Shield
 
 on:
   workflow_dispatch:
+    inputs:
+      services:
+        description: 'Space-separated services to deploy (empty = all 9)'
+        required: false
+        default: ''
+      image_tag:
+        description: 'Image tag to deploy (empty = latest)'
+        required: false
+        default: 'latest'
+
+  workflow_call:
+    inputs:
+      services:
+        type: string
+        required: true
+      image_tag:
+        type: string
+        required: true
+    secrets:
+      JWT_SECRET:
+        required: true
 
 jobs:
   deploy:
@@ -18,8 +53,39 @@ jobs:
           docker version
           docker compose version
 
-      # Create runtime environment files.
-      # Both services intentionally receive the same JWT secret.
+      - name: Resolve services and tag
+        id: vars
+        shell: powershell
+        run: |
+          $allServices = "eureka-server config-server api-gateway transaction-service fraud-detection-service alert-service user-service report-service fraud-shield-dashboard"
+
+          # workflow_call inputs arrive as ${{ inputs.x }}; workflow_dispatch
+          # inputs arrive as ${{ github.event.inputs.x }} - resolve whichever
+          # one is actually populated for this run.
+          $services = "${{ inputs.services }}"
+          if ([string]::IsNullOrWhiteSpace($services)) {
+            $services = "${{ github.event.inputs.services }}"
+          }
+          if ([string]::IsNullOrWhiteSpace($services)) {
+            $services = $allServices
+          }
+
+          $tag = "${{ inputs.image_tag }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            $tag = "${{ github.event.inputs.image_tag }}"
+          }
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            $tag = "latest"
+          }
+
+          echo "services=$services" >> $env:GITHUB_OUTPUT
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+          Write-Host "Resolved services: $services"
+          Write-Host "Resolved tag: $tag"
+
+      # Both services intentionally receive the same JWT secret - it's a
+      # shared HMAC key, not a public/private pair (user-service signs,
+      # api-gateway verifies).
       - name: Create deployment environment files
         shell: powershell
         env:
@@ -28,24 +94,15 @@ jobs:
           "JWT_SECRET=$env:JWT_SECRET" | Set-Content -Path "api-gateway\.env"
           "JWT_SECRET=$env:JWT_SECRET" | Set-Content -Path "user-service\.env"
 
-#      - name: Login to GHCR
-#        shell: powershell
-#        run: |
-#          "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io `
-#            -u "${{ secrets.GHCR_USERNAME }}" `
-#            --password-stdin
-
-      - name: Pull latest images
+      - name: Deploy (pull + up + health check + auto-rollback)
         shell: powershell
         run: |
-          docker compose -f docker-compose.deploy.yml pull
+          .\.github\scripts\deploy-services.ps1 `
+            -Services "${{ steps.vars.outputs.services }}" `
+            -ImageTag "${{ steps.vars.outputs.tag }}"
 
-      - name: Deploy Fraud Shield
-        shell: powershell
-        run: |
-          docker compose -f docker-compose.deploy.yml up -d --remove-orphans
-
-      - name: Show deployment status
+      - name: Show final deployment status
+        if: always()
         shell: powershell
         run: |
           docker compose -f docker-compose.deploy.yml ps
