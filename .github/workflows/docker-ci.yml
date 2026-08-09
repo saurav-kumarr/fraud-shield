@@ -83,23 +83,34 @@ jobs:
       # Moves the baseline forward so the NEXT run's diff starts from here -
       # this is what makes changed-service detection work correctly even
       # with sporadic manual triggers instead of a trigger on every push.
-      - name: Move last-ci-build tag to this commit
+#      - name: Move last-ci-build tag to this commit
+#        run: |
+#          git config user.name "github-actions[bot]"
+#          git config user.email "github-actions[bot]@users.noreply.github.com"
+#          git tag -f last-ci-build
+#          git push origin last-ci-build --force
+
+  deploy:
+    steps:
+      - name: Deploy
+        # Runs after build succeeds, using the SAME services list detect already
+        # computed - no artifacts or cross-workflow data passing needed, since
+        # this is a job within the same workflow run, not a separate workflow.
+        needs: [ detect, build ]
+        if: needs.detect.outputs.has_changes == 'true'
+        uses: ./.github/workflows/deploy.yml
+        with:
+          services: ${{ needs.detect.outputs.services }}
+          image_tag: ${{ github.sha }}
+        secrets:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Update last successful deployment tag
+        if: success()
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f last-ci-build
           git push origin last-ci-build --force
 
-  deploy:
-    name: Deploy
-    # Runs after build succeeds, using the SAME services list detect already
-    # computed - no artifacts or cross-workflow data passing needed, since
-    # this is a job within the same workflow run, not a separate workflow.
-    needs: [detect, build]
-    if: needs.detect.outputs.has_changes == 'true'
-    uses: ./.github/workflows/deploy.yml
-    with:
-      services: ${{ needs.detect.outputs.services }}
-      image_tag: ${{ github.sha }}
-    secrets:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
