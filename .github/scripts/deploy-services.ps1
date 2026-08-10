@@ -83,7 +83,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # --- Step 3: bring up ONLY these services ---
 Write-Host "`n--- Starting new containers ---" -ForegroundColor Cyan
-docker compose -f $ComposeFile up -d --remove-orphans $ServiceList
+docker compose -f $ComposeFile up -d --no-deps --remove-orphans $ServiceList
 if ($LASTEXITCODE -ne 0) {
     Write-Error "docker compose up failed."
     exit 1
@@ -136,7 +136,7 @@ if ($Failed.Count -gt 0) {
             # network, healthcheck) from docker-compose.deploy.yml, not just
             # a bare container with none of that config.
             $env:IMAGE_TAG = $prevTag
-            docker compose -f $ComposeFile up -d $svc
+            docker compose -f $ComposeFile up -d --no-deps $svc
         }
         else {
             Write-Host "  $svc has no previous tag recorded - cannot auto-rollback, manual intervention needed" -ForegroundColor Red
