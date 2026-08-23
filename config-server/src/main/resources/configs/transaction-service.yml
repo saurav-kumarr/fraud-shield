@@ -20,7 +20,9 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.type.mapping: "transactionEvent:com.fraudshield.transaction.kafka.TransactionEvent"
-
+        enable.idempotence: "true"
+        acks: "all"
+        retries: 5
   data:
     redis:
       host: localhost

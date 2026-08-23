@@ -1,10 +1,16 @@
 import api from './api';
 
 export const transactionService = {
-
-  createTransaction: async (data) => {
+  // Add idempotencyKey as a second parameter
+  createTransaction: async (data, idempotencyKey) => {
     const response = await api.post(
-        '/api/transactions', data);
+        '/api/transactions', data, {
+          // Inject the header explicitly for this POST request
+          headers: {
+            'Idempotency-Key': idempotencyKey
+          }
+
+        });
     return response.data;
   },
 

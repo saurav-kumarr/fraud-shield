@@ -8,6 +8,9 @@ import toast from 'react-hot-toast';
 const CreateTransaction = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  // 1. Generate the Idempotency Key exactly ONCE when the component loads
+  const [idempotencyKey] = useState(crypto.randomUUID());
   
   const [formData, setFormData] = useState({
     merchantId: '',
@@ -31,15 +34,20 @@ const CreateTransaction = () => {
     setLoading(true);
 
     try {
+      // 2. Pass the idempotencyKey into the service call
       const response = await transactionService
           .createTransaction({
             ...formData,
             amount: parseFloat(formData.amount),
-          });
+          }, idempotencyKey);
       
       toast.success('Transaction created successfully!');
       navigate('/transactions');
     } catch (error) {
+      // 3. Handle the Idempotency Rejection (HTTP 409) gracefully
+      if (error.response?.status === 409) {
+        toast.error('This transaction is already being processed!');
+      }
       toast.error(
           error.response?.data?.message || 
           'Failed to create transaction');

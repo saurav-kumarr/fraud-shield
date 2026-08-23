@@ -1,16 +1,21 @@
 package com.fraudshield.transaction.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fraudshield.transaction.dto.TransactionRequest;
 import com.fraudshield.transaction.dto.TransactionResponse;
 import com.fraudshield.transaction.exception.BadRequestException;
 import com.fraudshield.transaction.exception.ResourceNotFoundException;
 import com.fraudshield.transaction.kafka.TransactionEvent;
 import com.fraudshield.transaction.kafka.TransactionProducer;
+import com.fraudshield.transaction.model.OutboxEvent;
+import com.fraudshield.transaction.model.OutboxEventCreated;
 import com.fraudshield.transaction.model.Transaction;
 import com.fraudshield.transaction.model.TransactionStatus;
+import com.fraudshield.transaction.repository.OutboxEventRepository;
 import com.fraudshield.transaction.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +30,13 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
-    private final TransactionProducer transactionProducer;
+    //private final TransactionProducer transactionProducer;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper; // Used to convert object to JSON string
+    // 1. INJECT THE PUBLISHER
+    private final ApplicationEventPublisher eventPublisher;
 
-    @Transactional
+    @Transactional  // This now protects BOTH database writes atomically!
     public TransactionResponse createTransaction(TransactionRequest request, String userId) {
 
         if (userId == null || userId.isEmpty()) {
@@ -68,10 +77,30 @@ public class TransactionService {
                 .timeStamp(LocalDateTime.now())
                 .build();
 
-        // Step 4: Publish to Kafka
-        transactionProducer.publishTransaction(event);
 
-        // Step 5: Return response
+        // Step 4: Save to Outbox (instead of calling Kafka directly)
+        OutboxEvent outboxEvent;
+        try {
+            outboxEvent = OutboxEvent.builder()
+                    .aggregateId(savedTransaction.getTransactionId())
+                    .eventType("TRANSACTION_CREATED")
+                    .payload(objectMapper.writeValueAsString(event))
+                    .processed(false)
+                    .build();
+            outboxEventRepository.save(outboxEvent);
+            log.info("OutboxEvent saved for transactionId: {}", savedTransaction.getTransactionId());
+        } catch (Exception e) {
+            log.error("Failed to serialize event payload", e);
+            throw new RuntimeException("Failed to process transaction event", e);
+        }
+
+//        // Step 4: Publish to Kafka
+//        transactionProducer.publishTransaction(event);
+
+        // Step 5: SHOUT TO THE SPRING BOOT APP THAT WE SAVED AN OUTBOX EVENT
+        eventPublisher.publishEvent(new OutboxEventCreated(outboxEvent.getId()));
+
+        // Step 6: Return response
         return mapToResponse(savedTransaction);
 
 

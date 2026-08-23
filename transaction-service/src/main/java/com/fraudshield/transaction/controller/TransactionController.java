@@ -3,6 +3,8 @@ package com.fraudshield.transaction.controller;
 import com.fraudshield.transaction.context.UserContext;
 import com.fraudshield.transaction.dto.TransactionRequest;
 import com.fraudshield.transaction.dto.TransactionResponse;
+import com.fraudshield.transaction.exception.DuplicateTransactionException;
+import com.fraudshield.transaction.service.IdempotencyService;
 import com.fraudshield.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +22,20 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final IdempotencyService idempotencyService;
     private final UserContext userContext;
 
     @PostMapping
     public ResponseEntity<TransactionResponse> createTransaction(
+            @RequestHeader("Idempotency-Key")  String idempotencyKey,
             @Valid @RequestBody TransactionRequest request
             ){
+
+        // 1. Check Idempotency immediately
+        if (idempotencyService.isDuplicate(idempotencyKey)) {
+            throw new DuplicateTransactionException("Duplicate request detected for key: " + idempotencyKey);
+        }
+
         String userId = userContext.getCurrentUserId();
         log.info("Received transaction request for userId: {}", userId);
         TransactionResponse response = transactionService.createTransaction(request, userId);
